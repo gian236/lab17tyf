@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab 17 · Tor Browser + threat model</title>
+  <style>
+    :root{--bg:#080d18;--panel:#111a2a;--panel2:#17243a;--ink:#eff5ff;--muted:#a5b4c9;--line:#2a3b58;--cyan:#66e5d3;--blue:#8db4ff;--gold:#ffd477;--pink:#ff91bd;--good:#8ff0b0}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 85% 0,#19345a 0,transparent 35rem),var(--bg);color:var(--ink);font:16px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}.wrap{width:min(1160px,calc(100% - 40px));margin:auto}
+    header{padding:78px 0 58px;border-bottom:1px solid var(--line)}.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:42px;align-items:end}.eyebrow{color:var(--cyan);font-weight:800;letter-spacing:.14em;text-transform:uppercase;font-size:.78rem}h1{font-size:clamp(3.2rem,8vw,7rem);line-height:.9;letter-spacing:-.08em;margin:18px 0 24px;max-width:800px}h1 span{color:var(--cyan)}.lead{color:var(--muted);font-size:1.16rem;max-width:700px}.hero-card,.card{background:linear-gradient(145deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 18px 50px #0004}.hero-card strong{display:block;font-size:2.2rem;color:var(--good)}.hero-card small{color:var(--muted)}
+    section{padding:58px 0}.section-title{display:flex;justify-content:space-between;align-items:baseline;gap:20px;border-bottom:1px solid var(--line);margin-bottom:24px}.section-title h2{font-size:2rem;letter-spacing:-.04em;margin:0 0 12px}.section-title p{color:var(--muted);margin:0 0 12px;text-align:right}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.tag{display:inline-block;color:var(--cyan);border:1px solid #39786f;border-radius:999px;padding:2px 10px;font-size:.76rem;font-weight:700;margin-bottom:12px}.metric{font-size:2rem;font-weight:800;color:var(--cyan);line-height:1.1}.card h3{margin:0 0 7px}.card p{color:var(--muted);margin:0}.good{color:var(--good)!important}.gold{color:var(--gold)!important}
+    .flow{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.step{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 15px}.step:not(:last-child)::after{content:'→';position:absolute;right:-18px;top:32%;color:var(--cyan);font-size:1.5rem;z-index:2}.step b{display:block;color:var(--cyan);font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px}.step span{color:var(--muted);font-size:.9rem}
+    table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}th,td{padding:14px 15px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}th{background:#1b2b45;color:var(--cyan);font-size:.88rem}td{color:var(--muted)}td:first-child{color:var(--ink);font-weight:700;width:16%}tr:last-child td{border-bottom:0}.circuit{display:grid;grid-template-columns:1fr 1fr;gap:18px}.route{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:15px}.hop{background:#0b1422;border:1px solid #355071;border-radius:12px;padding:13px 15px;min-width:110px;text-align:center}.hop b{display:block;color:var(--ink)}.hop small{color:var(--muted)}.arrow{color:var(--cyan);font-size:1.3rem}.callout{border-left:4px solid var(--pink);background:#251827;border-radius:0 14px 14px 0;padding:19px 22px;color:#ecd8e3}.callout strong{color:var(--pink)}.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}.list{margin:0;padding-left:20px;color:var(--muted)}.list li{margin:8px 0}.evidence{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.evidence .card{min-height:165px}.number{color:var(--gold);font-size:1.7rem;font-weight:800}code{color:var(--blue)}footer{border-top:1px solid var(--line);padding:34px 0 58px;color:var(--muted)}.links{display:flex;gap:12px;flex-wrap:wrap}.links a{border:1px solid #345274;border-radius:999px;padding:7px 14px;background:#0d1828}
+    @media(max-width:850px){.hero,.circuit,.two{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}.flow{grid-template-columns:1fr}.step:not(:last-child)::after{content:'↓';right:48%;top:auto;bottom:-25px}.section-title{display:block}.section-title p{text-align:left}.evidence{grid-template-columns:1fr}table{display:block;overflow-x:auto;white-space:normal}}
+    .shots{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:18px}.shot{margin:0;background:#0b1422;border:1px solid var(--line);border-radius:16px;padding:10px}.shot img{display:block;width:100%;height:190px;object-fit:contain;background:#060b13;border-radius:10px}.shot figcaption{padding:10px 4px 2px;color:var(--muted);font-size:.9rem}.shot strong{color:var(--ink)}
+    @media(max-width:850px){.shots{grid-template-columns:1fr}}
+    @media(max-width:520px){.wrap{width:min(100% - 28px,1160px)}header{padding-top:50px}.grid{grid-template-columns:1fr}h1{font-size:4.3rem}th,td{min-width:180px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap hero">
+      <div>
+        <div class="eyebrow">Lab 17 · Sesión 20 · TechFreedom</div>
+        <h1>Tor Browser<br><span>y quién ve qué.</span></h1>
+        <p class="lead">Observación de un circuito real de Tor Browser y threat model del flujo de creación y financiación de un escrow en Pactrail.</p>
+      </div>
+      <div class="hero-card">
+        <div class="eyebrow">Resultado</div>
+        <strong>circuito observado</strong>
+        <small>Tor Browser oficial · configuración predeterminada · sitio HTTPS público</small>
+        <hr style="border:0;border-top:1px solid #2a3b58;margin:20px 0">
+        <div class="muted">Destino observado</div>
+        <code>github.com</code>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section>
+      <div class="section-title"><h2>Qué se comprobó</h2><p>evidencia y análisis</p></div>
+      <div class="grid">
+        <article class="card"><span class="tag">CIRCUITO</span><div class="metric">3 hops</div><p>Guard, middle y exit observados en Tor Browser.</p></article>
+        <article class="card"><span class="tag">CAMBIO</span><div class="metric good">3 / 3</div><p>Cambiaron los tres hops tras solicitar un nuevo circuito.</p></article>
+        <article class="card"><span class="tag">SCOPE</span><div class="metric gold">HTTPS</div><p>Solo sitio clearnet público; sin operación de red.</p></article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title"><h2>Flujo real de Pactrail</h2><p>crear y financiar un escrow</p></div>
+      <div class="flow">
+        <div class="step"><b>01 · Billetera</b><span>El usuario conecta una billetera EVM.</span></div>
+        <div class="step"><b>02 · Datos</b><span>Indica beneficiario, verificador, importe y requisitos.</span></div>
+        <div class="step"><b>03 · Create</b><span>Firma <code>createEscrow</code> desde el navegador.</span></div>
+        <div class="step"><b>04 · Approve</b><span>Autoriza el importe del token para el escrow.</span></div>
+        <div class="step"><b>05 · Fund</b><span>Firma <code>fund()</code> y el contrato queda financiado.</span></div>
+      </div>
+      <p class="muted" style="margin-top:18px">El venture continúa leyendo la cuenta, parámetros, estado y actividad necesarios para operar el contrato en la red pública.</p>
+    </section>
+
+    <section>
+      <div class="section-title"><h2>Circuit display real</h2><p>sin IPs completas</p></div>
+      <div class="circuit">
+        <article class="card"><span class="tag">INICIAL</span><h3>New Tor Circuit for this Site</h3><div class="route"><div class="hop"><b>Alemania</b><small>Guard</small></div><span class="arrow">→</span><div class="hop"><b>Alemania</b><small>Middle</small></div><span class="arrow">→</span><div class="hop"><b>Alemania</b><small>Exit</small></div></div><p style="margin-top:14px">La interfaz indicó que el guard podía no cambiar.</p></article>
+        <article class="card"><span class="tag">POSTERIOR</span><h3>Nuevo circuito solicitado</h3><div class="route"><div class="hop"><b>Estados Unidos</b><small>Guard</small></div><span class="arrow">→</span><div class="hop"><b>Francia</b><small>Middle</small></div><span class="arrow">→</span><div class="hop"><b>Países Bajos</b><small>Exit</small></div></div><p style="margin-top:14px">En esta observación cambiaron guard, middle y exit.</p></article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title"><h2>Comparación del flujo</h2><p>HTTPS · Tor · I2P conceptual</p></div>
+      <table>
+        <thead><tr><th>Elemento</th><th>Solo HTTPS</th><th>Tor sobre clearnet</th><th>I2P dentro de I2P</th></tr></thead>
+        <tbody>
+          <tr><td>IP del usuario</td><td>El sitio recibe la conexión directa.</td><td>El sitio ve la IP del exit; la red local/guard pueden ver el origen.</td><td>El servicio I2P ve un punto de salida de I2P; no aplica a github.com.</td></tr>
+          <tr><td>Destino</td><td>Conexión directa al servicio.</td><td>El exit conecta con el sitio clearnet.</td><td>Requiere un servicio dentro de I2P.</td></tr>
+          <tr><td>Payload</td><td>HTTPS lo protege frente a intermediarios.</td><td>HTTPS continúa protegiendo el payload.</td><td>Depende también de HTTPS y autenticación del servicio.</td></tr>
+          <tr><td>Exit o relay malicioso</td><td>No hay exit Tor; un intermediario ve metadatos.</td><td>Puede ver destino, tiempos y volumen, no el payload HTTPS.</td><td>Puede observar metadatos de su tramo.</td></tr>
+          <tr><td>Login</td><td>La cuenta, firma y cookies llegan al venture.</td><td>Tor no elimina la identidad entregada ni la cuenta de la billetera.</td><td>I2P tampoco reemplaza la identidad de aplicación.</td></tr>
+          <tr><td>Costo para el usuario</td><td>Latencia y gas habituales.</td><td>Más latencia/fricción, además de gas y firmas.</td><td>Mayor complejidad; no se instala para este lab.</td></tr>
+          <tr><td>Qué sigue viendo el venture</td><td>Cuenta, escrow, parámetros, estado y actividad.</td><td>Lo mismo a nivel de aplicación; no necesariamente la IP de origen.</td><td>La red de transporte no elimina los datos operativos.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <div class="section-title"><h2>Quién ve qué</h2><p>metadatos frente a payload</p></div>
+      <table>
+        <thead><tr><th>Componente</th><th>Puede observar</th><th>No puede observar directamente</th></tr></thead>
+        <tbody>
+          <tr><td>Red local</td><td>Conexión a Tor y metadatos básicos.</td><td>Sitio final y payload HTTPS.</td></tr>
+          <tr><td>Guard</td><td>Conexión del usuario e IP de origen.</td><td>Contenido final protegido por HTTPS.</td></tr>
+          <tr><td>Middle</td><td>Que participa en el circuito.</td><td>Identidad completa y payload final.</td></tr>
+          <tr><td>Exit</td><td>Destino, tiempos y volumen.</td><td>Payload protegido por HTTPS.</td></tr>
+          <tr><td>Sitio</td><td>Conexión proveniente del exit.</td><td>IP real del usuario de Tor.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:20px"><strong>Conclusión técnica:</strong> si el exit fuera malicioso, con este sitio HTTPS podría ver el destino, los tiempos y otros metadatos de conexión, pero no podría leer el payload protegido por HTTPS.</div>
+    </section>
+
+    <section>
+      <div class="section-title"><h2>Límites y adversarios</h2><p>Tor no es anonimato absoluto</p></div>
+      <div class="two">
+        <article class="card"><h3>Adversarios considerados</h3><ul class="list"><li>ISP y red local: acceso a Tor y metadatos.</li><li>Sitio: IP del exit, cuenta y actividad.</li><li>Operador de guard: posible visibilidad del origen.</li><li>Operador de exit: destino y metadatos.</li><li>Gobierno con visibilidad parcial.</li><li>Correlación end-to-end de tiempos y volumen.</li></ul></article>
+        <article class="card"><h3>Tor no protege</h3><ul class="list"><li>Fingerprinting del navegador.</li><li>Cookies, cuentas y login.</li><li>Datos entregados voluntariamente al venture.</li><li>Malware o compromiso del dispositivo.</li><li>Información necesaria para operar el escrow.</li></ul></article>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title"><h2>Liability y Persona Obligada</h2><p>qué debe seguir viendo Pactrail</p></div>
+      <div class="card"><p style="font-size:1.18rem;color:var(--ink)">Tor puede ocultar la IP de origen, pero Pactrail debe seguir viendo la identidad de la cuenta o billetera, beneficiario, verificador, importe, vencimiento, requisitos, estado, firmas e historial de actividad necesarios para operar y auditar el contrato.</p><p>También puede necesitar correo, datos de una orden, soporte e información para cumplir obligaciones legales o de Persona Obligada. Esta evaluación se documenta teniendo presente el marco <strong>PSAV / 15-2026</strong>.</p></div>
+    </section>
+
+    <section>
+      <div class="section-title"><h2>Evidencia del laboratorio</h2><p>capturas referenciadas</p></div>
+      <div class="shots">
+        <figure class="shot"><img src="tor1.png" alt="Circuito Tor inicial de github.com, con IPs cubiertas"><figcaption><strong>tor1.png · Circuito inicial</strong><br>Alemania → Alemania → Alemania.</figcaption></figure>
+        <figure class="shot"><img src="tor2.png" alt="Circuito Tor posterior de github.com, con IPs cubiertas"><figcaption><strong>tor2.png · Circuito posterior</strong><br>Estados Unidos → Francia → Países Bajos.</figcaption></figure>
+        <figure class="shot"><img src="normal.png" alt="Información de conexión HTTPS de github.com"><figcaption><strong>normal.png · Contraste HTTPS</strong><br>Conexión segura y certificado válido.</figcaption></figure>
+      </div>
+      <p class="muted" style="margin-top:18px">Las tres capturas están incluidas y muestran las IPs cubiertas.</p>
+    </section>
+  </main>
+
+  <footer><div class="wrap"><div class="eyebrow">Lab 17 · Entregable</div><p>Observación de Tor Browser y threat model aplicado a Pactrail. Payload protegido no equivale a metadata invisible.</p><div class="links"><a href="THREAT.md">THREAT.md</a><a href="README.md">README.md</a><a href="../Venture/PactTrail/pactrail-real-mvp/frontend/src/main.jsx">Código del flujo Pactrail</a></div></div></footer>
+</body>
+</html>
